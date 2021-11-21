@@ -1,0 +1,3 @@
+table pWeight  := 365  ; #weight of representative period [days]
+table pENSCost := 0.180; #energy not supplied cost    [kEUR/MWh]
+

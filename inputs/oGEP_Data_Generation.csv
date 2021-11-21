@@ -1,0 +1,5 @@
+g,pVarCost,pInvCost,pUnitCap,pIsRenew
+ocgt,0.07,25,100,0
+ccgt,0.05,40,400,0
+wind,0.001,70,50,1
+solar,0,50,10,1
