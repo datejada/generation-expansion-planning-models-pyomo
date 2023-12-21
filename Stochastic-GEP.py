@@ -116,6 +116,9 @@ instance = mGEP.create_instance(data)
 # We can display all the info of the instance
 instance.pprint()
 
+# write the optimization problem
+instance.write('mGEP.lp', io_options={'symbolic_solver_labels': True})
+
 # %% We solve the optimization problem
 results = opt.solve(instance,symbolic_solver_labels=True,tee=True) 
 
