@@ -20,8 +20,8 @@ input_folder  = 'inputs'
 output_folder = 'outputs'
 
 # solver definitions
-SolverName     = 'cbc'
-SolverPath_exe = 'C:\\cbc-win64\\cbc'
+SolverName     = 'highs'
+SolverPath_exe = 'C:\\highs\\highs'
 
 # %% We define an abstract model
 mGEP = AbstractModel()
@@ -90,7 +90,7 @@ mGEP.eENSProd = Constraint(mGEP.sc,mGEP.p,rule=eENSProd)
 
 # %% We define the optimization solver. You can also use cplex, gurobi, etc
 opt = SolverFactory(SolverName,executable=SolverPath_exe)
-opt.options['allowableGap'] = 0 
+##opt.options['allowableGap'] = 0 
 
 # %% We open a DataPortal to load the data
 data = DataPortal() 
