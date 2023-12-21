@@ -1,0 +1,17 @@
+argcomplete==3.1.2
+cfgv==3.3.1
+click==8.1.7
+colorama==0.4.6
+distlib==0.3.7
+filelock==3.12.2
+identify==2.5.26
+nodeenv==1.8.0
+packaging==23.2
+pipx==1.2.1
+platformdirs==3.10.0
+ply==3.11
+pre-commit==3.3.3
+Pyomo==6.7.0
+PyYAML==6.0.1
+userpath==1.9.1
+virtualenv==20.24.2
