@@ -120,3 +120,19 @@ instance.pprint()
 results = opt.solve(instance,symbolic_solver_labels=True,tee=True) 
 
 # %% Print results
+
+# Check if the problem is optimal
+if results.solver.status == SolverStatus.ok and results.solver.termination_condition == TerminationCondition.optimal:
+  # objective function value
+  print("total cost: "+str(instance.vInvesCost.value+instance.vOperaCost.value))
+  # We write some of the results in a csv file
+  f = open('.\\'+output_folder+'\\oGEP_Invest_Result.csv', 'w')
+  f.write("g,vInstalUnits,pInstalCap"+"\n")
+  for g in instance.g.data():
+    f.write(str(g)+","+str(instance.vInstalUnits[g].value)+","+str(instance.pUnitCap[g]*instance.vInstalUnits[g].value)+"\n")
+  f.close()
+else:
+  # Print a message indicating that the problem is not optimal
+  print("The problem is not optimal.")
+  # Print the solver status
+  print("Solver Status: "+str(results.solver.status))
