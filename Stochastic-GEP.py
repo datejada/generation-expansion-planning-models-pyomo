@@ -20,8 +20,13 @@ input_folder  = 'inputs'
 output_folder = 'outputs'
 
 # solver definitions
-SolverName     = 'highs'
-SolverPath_exe = 'C:\\highs\\highs'
+solver = 'highs' #gurobi
+
+if solver == 'highs':
+  SolverName     = 'highs'
+  SolverPath_exe = 'C:\\highs\\highs'
+else:
+  SolverName     = solver
 
 # %% We define an abstract model
 mGEP = AbstractModel()
@@ -89,8 +94,14 @@ def eENSProd(model,sc,p):
 mGEP.eENSProd = Constraint(mGEP.sc,mGEP.p,rule=eENSProd)
 
 # %% We define the optimization solver. You can also use cplex, gurobi, etc
-opt = SolverFactory(SolverName,executable=SolverPath_exe)
-##opt.options['allowableGap'] = 0 
+
+if solver == 'highs':
+  opt = SolverFactory(SolverName,executable=SolverPath_exe)
+else:
+  opt = SolverFactory(SolverName)
+
+# We define the options of the solver (this depends on the solver you are using)
+##opt.options['mip_rel_gap'] = 0 # HiGHS option for relative gap
 
 # %% We open a DataPortal to load the data
 data = DataPortal() 
