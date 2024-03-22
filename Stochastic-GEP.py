@@ -135,6 +135,10 @@ results = opt.solve(instance,symbolic_solver_labels=True,tee=True)
 
 # %% Print results
 
+# Print the number of variables and constraints
+print("Number of variables: "+str(instance.nvariables()))
+print("Number of constraints: "+str(instance.nconstraints()))
+
 # Check if the problem is optimal
 if results.solver.status == SolverStatus.ok and results.solver.termination_condition == TerminationCondition.optimal:
   # objective function value
