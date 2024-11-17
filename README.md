@@ -4,7 +4,7 @@ The following files solve the GEP problem for three scenarios of wind and solar 
 
 * **Stochastic-GEP.py**: Two-Stage Stochastic Generation Expansion Planning
 
-The models are developed in [Pyomo](http://www.pyomo.org/) v6.7 and solved using [HiGHS](https://highs.dev/).
+The models are developed in [Pyomo](http://www.pyomo.org/) and solved using [HiGHS](https://highs.dev/).
 
 The main references to model the optimization problems are:
 
