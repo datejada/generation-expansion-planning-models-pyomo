@@ -10,8 +10,9 @@
 #%% Import packages
 from __future__ import division
 from sys import executable
-from pyomo.environ import *
+import pyomo.environ as pyo
 from pyomo.opt import SolverFactory
+import highspy
 
 # %% General parameters
 
@@ -20,91 +21,82 @@ input_folder  = 'inputs'
 output_folder = 'outputs'
 
 # solver definitions
-solver = 'highs' #gurobi
-
-if solver == 'highs':
-  SolverName     = 'highs'
-  SolverPath_exe = 'C:\\highs\\highs'
-else:
-  SolverName     = solver
+SolverName = 'appsi_highs' #gurobi
 
 # %% We define an abstract model
-mGEP = AbstractModel()
+mGEP = pyo.AbstractModel()
 
 # %% Sets and parameters of the abstract model
 
 # sets
-mGEP.p  = Set() #time periods (e.g., hours)
-mGEP.sc = Set() #uncertainty scenarios
-mGEP.g  = Set() #generation technologies
+mGEP.p  = pyo.Set() #time periods (e.g., hours)
+mGEP.sc = pyo.Set() #uncertainty scenarios
+mGEP.g  = pyo.Set() #generation technologies
 
 # parameters
-mGEP.pScProb = Param(mGEP.sc) #scenario probability [p.u.]
-mGEP.pDemand = Param(mGEP.p ) #demand per time period [MW]
+mGEP.pScProb = pyo.Param(mGEP.sc) #scenario probability [p.u.]
+mGEP.pDemand = pyo.Param(mGEP.p ) #demand per time period [MW]
 
-mGEP.pVarCost = Param(mGEP.g) #variable   cost of generation units [kEUR/MWh]
-mGEP.pInvCost = Param(mGEP.g) #investment cost of generation units [kEUR/MW/year]
-mGEP.pUnitCap = Param(mGEP.g) #capacity        of generation units [MW]
-mGEP.pIsRenew = Param(mGEP.g) #renewable units boolean indicator   [0,1]
+mGEP.pVarCost = pyo.Param(mGEP.g) #variable   cost of generation units [kEUR/MWh]
+mGEP.pInvCost = pyo.Param(mGEP.g) #investment cost of generation units [kEUR/MW/year]
+mGEP.pUnitCap = pyo.Param(mGEP.g) #capacity        of generation units [MW]
+mGEP.pIsRenew = pyo.Param(mGEP.g) #renewable units boolean indicator   [0,1]
 
-mGEP.pWeight  = Param(within=NonNegativeReals) #weight of representative period [days]
-mGEP.pENSCost = Param(within=NonNegativeReals) #energy not supplied cost    [kEUR/MWh]
+mGEP.pWeight  = pyo.Param(within=pyo.NonNegativeReals) #weight of representative period [days]
+mGEP.pENSCost = pyo.Param(within=pyo.NonNegativeReals) #energy not supplied cost    [kEUR/MWh]
 
-mGEP.pAviProf = Param(mGEP.sc,mGEP.g,mGEP.p,default=1,mutable=True)   #availability profile [p.u.]
+mGEP.pAviProf = pyo.Param(mGEP.sc,mGEP.g,mGEP.p,default=1,mutable=True)   #availability profile [p.u.]
 
 # %% Variables of the abstract model
 
-mGEP.vInvesCost   = Var(                      domain=NonNegativeReals, doc='Total investment Cost                [kEUR]')
-mGEP.vOperaCost   = Var(                      domain=NonNegativeReals, doc='Total operating  Cost                [kEUR]')
-mGEP.vProduct     = Var(mGEP.sc,mGEP.g,mGEP.p,domain=NonNegativeReals, doc='generation production per scenario   [MW]  ')
-mGEP.vInstalUnits = Var(        mGEP.g,       domain=Integers        , doc='number of installed generation units [N]   ')
-mGEP.vENS         = Var(mGEP.sc,       mGEP.p,domain=NonNegativeReals, doc='energy not supplied   per scenario   [MW]  ')
+mGEP.vInvesCost   = pyo.Var(                      domain=pyo.NonNegativeReals, doc='Total investment Cost                [kEUR]')
+mGEP.vOperaCost   = pyo.Var(                      domain=pyo.NonNegativeReals, doc='Total operating  Cost                [kEUR]')
+mGEP.vProduct     = pyo.Var(mGEP.sc,mGEP.g,mGEP.p,domain=pyo.NonNegativeReals, doc='generation production per scenario   [MW]  ')
+mGEP.vInstalUnits = pyo.Var(        mGEP.g,       domain=pyo.Integers        , doc='number of installed generation units [N]   ')
+mGEP.vENS         = pyo.Var(mGEP.sc,       mGEP.p,domain=pyo.NonNegativeReals, doc='energy not supplied   per scenario   [MW]  ')
 
 # %% Objective function of the abstract model
 def eTotalCost(model):
   return   model.vInvesCost + model.vOperaCost
-mGEP.eTotalCost = Objective(rule=eTotalCost)
+mGEP.eTotalCost = pyo.Objective(rule=eTotalCost)
 
 # %% Constraints
 
 #Total investment Cost [kEUR]
 def eInvesCost(model):
   return model.vInvesCost == sum(model.pInvCost[g]*model.pUnitCap[g]*model.vInstalUnits[g] for g in model.g)
-mGEP.eInvesCost = Constraint(rule=eInvesCost)
+mGEP.eInvesCost = pyo.Constraint(rule=eInvesCost)
 
 #Total operating  Cost [kEUR]
 def eOperaCost(model):
   return model.vOperaCost == (model.pWeight*(sum(model.pScProb[sc]*model.pVarCost[g]*model.vProduct[sc,g,p] for sc,g,p in model.sc*model.g*model.p) +
                                              sum(model.pScProb[sc]*model.pENSCost   *model.vENS    [sc,  p] for sc,  p in model.sc*        model.p)))
-mGEP.eOperaCost = Constraint(rule=eOperaCost)
+mGEP.eOperaCost = pyo.Constraint(rule=eOperaCost)
 
 #Power balance constraint [MW]
 def eBalance(model,sc,p):
   return sum(model.vProduct[sc,g,p] for g in model.g) + model.vENS[sc,p] == model.pDemand[p]
-mGEP.eBalance = Constraint(mGEP.sc,mGEP.p,rule=eBalance)
+mGEP.eBalance = pyo.Constraint(mGEP.sc,mGEP.p,rule=eBalance)
 
 #Max generation constraint
 def eMaxProd(model,sc,g,p):
   return model.vProduct[sc,g,p] <= model.pAviProf[sc,g,p]*model.pUnitCap[g]*model.vInstalUnits[g]
-mGEP.eMaxProd = Constraint(mGEP.sc,mGEP.g,mGEP.p,rule=eMaxProd)
+mGEP.eMaxProd = pyo.Constraint(mGEP.sc,mGEP.g,mGEP.p,rule=eMaxProd)
 
 #Max ENS constraint
 def eENSProd(model,sc,p):
   return model.vENS[sc,p] <= model.pDemand[p]
-mGEP.eENSProd = Constraint(mGEP.sc,mGEP.p,rule=eENSProd)
+mGEP.eENSProd = pyo.Constraint(mGEP.sc,mGEP.p,rule=eENSProd)
 
 # %% We define the optimization solver. You can also use cplex, gurobi, etc
 
-if solver == 'highs':
-  opt = SolverFactory(SolverName,executable=SolverPath_exe)
-else:
-  opt = SolverFactory(SolverName)
+opt = SolverFactory(SolverName)
 
 # We define the options of the solver (this depends on the solver you are using)
 ##opt.options['mip_rel_gap'] = 0 # HiGHS option for relative gap
 
 # %% We open a DataPortal to load the data
-data = DataPortal() 
+data = pyo.DataPortal() 
 
 # We read all the data from different files
 # Scalars
@@ -140,7 +132,7 @@ print("Number of variables: "+str(instance.nvariables()))
 print("Number of constraints: "+str(instance.nconstraints()))
 
 # Check if the problem is optimal
-if results.solver.status == SolverStatus.ok and results.solver.termination_condition == TerminationCondition.optimal:
+if results.solver.status == pyo.SolverStatus.ok and results.solver.termination_condition == pyo.TerminationCondition.optimal:
   # objective function value
   print("total cost: "+str(instance.vInvesCost.value+instance.vOperaCost.value))
   # We write some of the results in a csv file
@@ -154,3 +146,5 @@ else:
   print("The problem is not optimal.")
   # Print the solver status
   print("Solver Status: "+str(results.solver.status))
+
+# %%
